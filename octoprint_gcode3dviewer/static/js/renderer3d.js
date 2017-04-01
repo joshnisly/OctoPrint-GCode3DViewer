@@ -9,10 +9,8 @@ function ModelRenderer(dElem, oRenderOptions)
     this.dElem = dElem;
     this.oRenderOptions = oRenderOptions || {};
     this.oRenderOptions.iLineColor = this.oRenderOptions.iLineColor || 0x404040;
-    this.oRenderOptions.iWidth = this.oRenderOptions.iWidth || this.dElem.clientWidth;
-    this.oRenderOptions.iHeight = this.oRenderOptions.iHeight || this.dElem.clientHeight;
 
-    var fAspect = this.oRenderOptions.iWidth / this.oRenderOptions.iHeight;
+    var fAspect = this.dElem.clientWidth / this.dElem.clientHeight;
     this.camera = new THREE.PerspectiveCamera(60, fAspect, 1, 1000);
     this.controls = new THREE.OrbitControls(this.camera, dElem);
     this.controls.enableRotate = false;
@@ -26,16 +24,19 @@ function ModelRenderer(dElem, oRenderOptions)
         clearColor: 0xffffff,
         clearAlpha: 1
     });
-    this.renderer.setSize(this.oRenderOptions.iWidth, this.oRenderOptions.iHeight);
+    this.renderer.setSize(this.dElem.clientWidth, this.dElem.clientHeight);
     $(dElem).empty();
     $(dElem).append(this.renderer.domElement);
 
     this.object = new THREE.Object3D();
-    this.fnRenderFrameFn = createCallback(this, this._renderFrame);
+    this.fnRenderFrameFn = createCallback(this, this.renderFrame);
     this.object.rotateX(-0.5);
     this.scene.add(this.object);
 
-    this.rotater = new ObjectRotater(this.object, this.camera, dElem);
+    this._rotater = new ObjectRotater(this.object, this.camera, dElem, this);
+    this.controls.addEventListener('change', createCallback(this, function() {
+        requestAnimationFrame(this.fnRenderFrameFn);
+    }));
 }
 
 ModelRenderer.prototype.loadModel = function(aModel)
@@ -51,7 +52,7 @@ ModelRenderer.prototype.loadModel = function(aModel)
     for(var iLayer = 0; iLayer < aModel.length; iLayer++)
         this._renderModelLayer(aModel[iLayer], aOffset, lineMaterial);
 
-    this._renderFrame();
+    this.renderFrame();
 };
 
 ModelRenderer.prototype._renderModelLayer = function(aCmds, aOffsetAdjust, lineMaterial)
@@ -100,7 +101,6 @@ ModelRenderer.prototype._determinePrintOffset = function(aModel)
             if (aLayerCmds[j] && aLayerCmds[j].extrude && aLayerCmds[j].z)
             {
                 var point = [aLayerCmds[j].x, aLayerCmds[j].y, aLayerCmds[j].z];
-                //console.log(point);
                 _update(min, point, Math.min);
                 _update(max, point, Math.max);
             }
@@ -114,19 +114,18 @@ ModelRenderer.prototype._determinePrintOffset = function(aModel)
     ];
 };
 
-ModelRenderer.prototype._renderFrame = function()
+ModelRenderer.prototype.renderFrame = function()
 {
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
-    requestAnimationFrame(this.fnRenderFrameFn);
 };
 
-function ObjectRotater(oObject, oCamera, dContainer)
+function ObjectRotater(oObject, oCamera, dContainer, oRenderer)
 {
     this._bRotate = false;
     this._oObject = oObject;
     this._oCamera = oCamera;
-    console.log('dContainer', dContainer);
+    this._oRenderer = oRenderer;
     $(dContainer).bind('mousedown', createCallback(this, this._onMouseDown));
     $(dContainer).bind('mouseup', createCallback(this, this._onMouseUp));
     $(dContainer).bind('mousemove', createCallback(this, this._onMouseMove));
@@ -137,7 +136,6 @@ function ObjectRotater(oObject, oCamera, dContainer)
 ObjectRotater.prototype._onMouseDown = function(event)
 {
     this._bRotate = true;
-    console.log(event.clientX, event.clientY);
     this._lastPoint = [event.clientX, event.clientY];
 };
 
@@ -154,6 +152,8 @@ ObjectRotater.prototype._onMouseMove = function(event)
         this._oCamera.translateY((event.clientY-this._lastPoint[1]) * 2);
 
         this._lastPoint = [event.clientX, event.clientY];
+
+        this._oRenderer.renderFrame();
     }
 };
 

@@ -17,18 +17,15 @@ $(function() {
 
         self.loadFile = function(path, date)
         {
-            console.log('loadFile', path, date);
         };
 
         self.fromCurrentData = function(data)
         {
-            console.log('fromCurrentData', data);
             self._loadModel(data);
         };
 
         self.fromHistoryData = function(data)
         {
-            console.log('fromHistoryData', data);
         };
 
         self._loadModel = function(data)
@@ -36,7 +33,6 @@ $(function() {
             if (data.job.file.path != self._lastLoadedModel)
             {
                 self._lastLoadedModel = data.job.file.path;
-                console.log('this._loadModel', data.job.file.origin, data.job.file.path);
                 OctoPrint.files.download(data.job.file.origin, data.job.file.path)
                     .done(function(response, rstatus) {
                         if(rstatus === 'success'){
@@ -51,7 +47,6 @@ $(function() {
 
         self._displayModel = function(gcode)
         {
-            //console.log(gcode);
             var model = parseGCode(gcode);
             var renderer = new ModelRenderer($('#ThreeDViewContainer')[0], {
                 iWidth: 585,
