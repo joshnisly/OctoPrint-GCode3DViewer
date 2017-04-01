@@ -10,4 +10,4 @@ This can be useful if you slice your models on another computer and only upload 
 Install via the bundled [Plugin Manager](https://github.com/foosel/OctoPrint/wiki/Plugin:-Plugin-Manager)
 or manually using this URL:
 
-    https://github.com/joshnisly/OctoPrint-GCodeViewer/archive/master.zip
+    https://github.com/joshnisly/OctoPrint-GCode3DViewer/archive/master.zip
